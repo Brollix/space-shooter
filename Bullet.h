@@ -1,16 +1,15 @@
 #pragma once
-#include <iostream>
 using namespace std;
+using namespace sf;
 
-class Bullet
-{
+class Bullet {
 public:
+	CircleShape bullet;
 
 	int radius = 7;
 	int bulletSpeed = 500;
 	Vector2f playerSpeed;
 	Vector2f dir;
-	CircleShape bullet;
 
 	Bullet() {
 		bullet.setFillColor(Color::White);
@@ -18,7 +17,7 @@ public:
 		bullet.setOrigin(radius, radius);
 	}
 
-	void draw(RenderWindow& window) {		
+	void draw(RenderWindow &window) {
 		window.draw(bullet);
 	}
 
@@ -26,13 +25,13 @@ public:
 		return bullet.getPosition();
 	}
 
-	void setPos(Vector2f pos) {		
+	void setPos(Vector2f pos) {
 		bullet.setPosition(pos);
 	}
 
 	void move(float offsetX, float offsetY) {
 		bullet.setPosition(
-			bullet.getPosition() + 
+			bullet.getPosition() +
 			Vector2f(offsetX, offsetY)
 		);
 	}

@@ -7,10 +7,8 @@ using namespace sf;
 
 class Player {
 public:
-
+	Clock clock;
 	CircleShape player;
-
-	HealthBar healthBar;
 
 	Vector2f pos;
 	Vector2f dist;
@@ -21,18 +19,21 @@ public:
 
 	int speed = 350;
 
-	double mag;
-	
 	int radius = 30;
 	int thickness = 5;
 
-	int bulletSpeed = 1000;
+	int bulletSpeed = 1500;
+	float shootingSpeed = 5;
+	float shootTime;
 
 	int health = 100;
-	int damage = 10;
+	int damage = 20;
 	int currentXP;
 	int totalXP;
-	int xpToNextLvl = pow(level, 2) * 5;
+	int xpToNextLvl;
+
+	bool isAlive = true;
+	bool isMoving;
 
 	int level = 1;
 
@@ -40,120 +41,135 @@ public:
 	int currentHealth;
 
 	Player() {
-		
-		pos = this->player.getPosition();
+		Setup();
+	}
+	void Setup() {
 		player.setRadius(radius);
 		player.setPointCount(3);
 
 		player.setOrigin(radius, radius);
-		player.setPosition(640, 360);			
 
 		player.setFillColor(Color::Black);
 		player.setOutlineColor(Color::Cyan);
 		player.setOutlineThickness(thickness);
 
 		font.loadFromFile("Oxygen.ttf");
-
-		levelNumber.setOrigin(
-			levelNumber.getGlobalBounds().getSize().x / 2,
-			levelNumber.getGlobalBounds().getSize().y
-		);
-		levelNumber.setFont(font);		
-		levelNumber.setFillColor(Color::White);		
-		levelNumber.setStyle(Text::Bold);
-		levelNumber.setCharacterSize(12);
+		levelNumber.setFont(font);
 
 		setMaxHealth(level);
 		setCurrentHealth();
+
+		setLevelText();
+	}
+
+	void Update(RenderWindow& window, Mouse mouse, float dt) {
+		pos = getPos();
+		draw(window);
+		lookToMouse(mouse, window);
+		move(window, dt);
+
+		shootTime = clock.getElapsedTime().asSeconds();
+
+		xpToNextLvl = pow(level, 2) * 5;
+
+		levelNumber.setPosition(player.getPosition().x - radius,
+			player.getPosition().y + radius + 20);
+		levelNumber.setString("lvl " + to_string(level));
+	}
+
+	void move(RenderWindow& window, float dt) {
+		Vector2f deltaPos;
+
+		if (Keyboard::isKeyPressed(Keyboard::W)) {
+			deltaPos.y -= 1;
+			isMoving = true;
+		}
+		if (Keyboard::isKeyPressed(Keyboard::A)) {
+			deltaPos.x -= 1;
+			isMoving = true;
+		}
+		if (Keyboard::isKeyPressed(Keyboard::S)) {
+			deltaPos.y += 1;
+			isMoving = true;
+		}
+		if (Keyboard::isKeyPressed(Keyboard::D)) {
+			deltaPos.x += 1;
+			isMoving = true;
+		}
+
+		pos += normalize(deltaPos) * (float)speed * dt;
+
+		setPos(pos);
 	}
 
 	void draw(RenderWindow& window) {
 		window.draw(player);
 		window.draw(levelNumber);
-		healthBar.render(window);
-	}
-
-	void lookToMouse(Mouse& mouse, RenderWindow& window) {
-		double mouseX = mouse.getPosition(window).x;
-		double mouseY = mouse.getPosition(window).y;
-		
-		dist.x = mouseX - player.getPosition().x;
-		dist.y = mouseY - player.getPosition().y;
-
-		dir.x = dist.x / mag;
-		dir.y = dist.y / mag;
-
-		double angle = ( atan2( dist.y, dist.x ) * ( 180 / 3.14 ) ) + 90;
-
-		player.setRotation(angle);
-	}
-	
-	void move(RenderWindow& window, float dt) {
-		pos = player.getPosition();
-
-		if (Keyboard::isKeyPressed(Keyboard::W))
-		{
-			pos.y -= speed * dt;
-		}
-		if (Keyboard::isKeyPressed(Keyboard::S))
-		{
-			pos.y += speed * dt;
-		}
-		if (Keyboard::isKeyPressed(Keyboard::A))
-		{
-			pos.x -= speed * dt;
-		}
-		if (Keyboard::isKeyPressed(Keyboard::D))
-		{
-			pos.x += speed * dt;
-		}
-
-		if (pos.x < 0){
-			pos.x = window.getSize().x;
-		}
-		if (pos.y < 0){
-			pos.y = window.getSize().y;
-		}
-		if (pos.x > window.getSize().x){
-			pos.x = 0;
-		}
-		if (pos.y > window.getSize().y){
-			pos.y = 0;
-		}
-
-		healthBar.setPosition(
-			player.getPosition().x - radius,
-			player.getPosition().y + (radius * 2) + 20
-		);
-
-		healthBar.setSize(radius * 2, 7, getCurrentHealth(), getMaxHealth());
-		
-		player.setPosition(pos);
-
-		levelNumber.setPosition(
-			player.getPosition().x - radius,
-			player.getPosition().y + radius + 20
-		);
-		levelNumber.setString("lvl " + to_string(level));
-	}
-	
-	Bullet shoot() {
-		Bullet bullet;
-		bullet.setPos(player.getPosition());
-
-		mag = sqrt(pow(dist.x, 2) + pow(dist.y, 2));
-		bullet.dir.x = dist.x / mag;
-		bullet.dir.y = dist.y / mag;
-		
-		return bullet;
 	}
 
 	Vector2f getPos() {
 		return player.getPosition();
 	}
 
-	void setPos(float x, float y) {
-		player.setPosition(Vector2f(x, y));
+	void setPos(Vector2f newPos) {
+		player.setPosition(newPos.x, newPos.y);
+	}
+
+	void setLevelText() {
+		levelNumber.setOrigin(levelNumber.getGlobalBounds().getSize().x / 2,
+			levelNumber.getGlobalBounds().getSize().y);
+		levelNumber.setFont(font);
+		levelNumber.setFillColor(Color::White);
+		levelNumber.setStyle(Text::Bold);
+		levelNumber.setCharacterSize(12);
+	}
+
+	void setShootSpeed() {
+		shootingSpeed += 0.10;
+	}
+
+	void lookToMouse(Mouse mouse, RenderWindow& window) {
+		Vector2i pixelPos = mouse.getPosition(window);
+		Vector2f worldPos = window.mapPixelToCoords(pixelPos);
+		Vector2f mousePos;
+		float mag;
+
+		mousePos = worldPos;
+
+		dist = mousePos - player.getPosition();
+
+		mag = sqrt(pow(dist.x, 2) + pow(dist.y, 2));
+
+		dir.x = dist.x / mag;
+		dir.y = dist.y / mag;
+
+		double angle = (atan2(dist.y, dist.x) * (180 / 3.14)) + 90;
+
+		player.setRotation(angle);
+	}
+
+	float magnitude(Vector2f vec) {
+		return sqrt(pow(vec.x, 2) + pow(vec.y, 2));
+	}
+
+	Vector2f normalize(Vector2f vec) {
+		float mag = magnitude(vec);
+		if (mag) {
+			vec /= (float)mag;
+		}
+		return vec;
+	}
+
+	Bullet shoot() {
+		Bullet bullet;
+		bullet.setPos(player.getPosition());
+
+		double mag;
+		mag = sqrt(pow(dist.x, 2) + pow(dist.y, 2));
+		bullet.dir.x = dist.x / mag;
+		bullet.dir.y = dist.y / mag;
+
+		return bullet;
 	}
 
 	int doDmg() {
@@ -188,11 +204,11 @@ public:
 
 	void setCurrentXP(int XP) {
 		currentXP += XP;
-	}	
+	}
 
 	int levelUP() {
 		currentXP -= xpToNextLvl;
+		//setShootSpeed();
 		return level += 1;
 	}
 };
-

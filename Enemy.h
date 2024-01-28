@@ -2,9 +2,11 @@
 using namespace sf;
 
 #include "Bullet.h"
+#include "HealthBar.h"
 
 class Enemy {
 public:
+	Clock clock;
 	CircleShape enemy;
 
 	HealthBar healthBar;
@@ -28,7 +30,14 @@ public:
 	int maxHealth;
 	int currentHealth;
 
+	int shootingSpeed = 1;
+	float shootTime;
+
 	Enemy() {
+		Setup();
+	}
+
+	void Setup() {
 		enemy.setRadius(size);
 		enemy.setPointCount(size / 10);
 		enemy.setFillColor(Color::Black);
@@ -45,7 +54,14 @@ public:
 		setCurrentHealth();
 	}
 
-	void draw(RenderWindow& window) {
+	void Update(RenderWindow& window, Vector2f playerPos, float dt) {
+		moveToPlayer(playerPos, dt);
+		healthBar.Update(getPos(), getCurrentHealth(), getMaxHealth(), Vector2f(-(size / 2) - 3, 60));
+
+		shootTime = clock.getElapsedTime().asSeconds();
+	}
+
+	void render(RenderWindow& window) {
 		window.draw(enemy);
 		healthBar.render(window);
 	}
@@ -59,25 +75,16 @@ public:
 		dir.x = dist.x / mag;
 		dir.y = dist.y / mag;
 
-		setPos(
-			getPos() +
-			Vector2f(
-				dir.x * speed * dt,
-				dir.y * speed * dt
-			)
-		);
-
-		healthBar.setPosition(
-			enemy.getPosition().x - size,
-			enemy.getPosition().y + size + 5
-		);
-
-		healthBar.setSize(size * 2, 7, getCurrentHealth(), getMaxHealth());
+		if (mag > 150) {
+			setPos(
+				getPos() +
+				Vector2f(
+					dir.x * speed * dt,
+					dir.y * speed * dt
+				)
+			);
+		}
 	}
-	
-	/*void lookAround(vector<Enemy> enemies) {
-
-	}*/
 
 	Bullet shoot() {
 		Bullet bullet;
@@ -120,6 +127,5 @@ public:
 
 	void takeDmg(int damage) {
 		currentHealth -= damage;
-	}	
+	}
 };
-

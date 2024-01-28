@@ -1,42 +1,51 @@
 #pragma once
 
-#include "SFML/Graphics.hpp"
-#include "SFML/Window.hpp"
-
 using namespace sf;
 using namespace std;
 
-class HealthBar
-{
+class HealthBar {
 public:
 
 	RectangleShape bar;
 	Text number;
 	Font font;
-	Vector2f pos;
+	Vector2f dim = { 50, 7 };
 
 	HealthBar() {
+		Setup();
+	}
+
+	void Setup() {
 		font.loadFromFile("Oxygen.ttf");
 		number.setFont(font);
 		bar.setFillColor(Color(200, 50, 50));
 	}
-
-	void setPosition(float x, float y) {
-		bar.setPosition(Vector2f(x, y));
-		number.setPosition(Vector2f(x, y + 25));
+	void Update(Vector2f pos, float currentHealth, float maximumHealth, Vector2f offset = { 0, 0 }) {
+		setSize(currentHealth, maximumHealth);
+		setString(currentHealth);
+		setPosition(pos + offset);
 	}
 
-	void setSize(float x, float y, float currentHealth, float maximumHealth) {
+	void setPosition(Vector2f pos) {
+		bar.setPosition(pos);
+		number.setPosition(pos.x, pos.y + 25);
+	}
+
+	void setString(float currentHealth) {
+		number.setString(to_string(currentHealth) + "HP");
+	}
+
+	void setSize(float currentHealth, float maximumHealth) {
 		float percentage = currentHealth / maximumHealth;
-		bar.setSize(Vector2f(x * percentage, y));
-		number.setString("health: " + to_string(currentHealth));
+		bar.setSize(Vector2f(dim.x * percentage, dim.y));
 	}
 
 	void setOrigin(float x, float y) {
 		bar.setOrigin(Vector2f(x, y));
 	}
 
-	void render(RenderWindow& window) {		
+	void render(RenderWindow& window) {
+		//window.draw(number);
 		window.draw(bar);
 	}
 };

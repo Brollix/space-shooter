@@ -149,10 +149,10 @@
     <ClInclude Include="HealthBar.h" />
     <ClInclude Include="Player.h" />
     <ClInclude Include="PlayerManager.h" />
-    <ClInclude Include="resource.h" />
+    <ClInclude Include="Star.h" />
   </ItemGroup>
   <ItemGroup>
-    <ResourceCompile Include="SpaceShooter.rc" />
+    <None Include="starFragment.shader" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
