@@ -24,15 +24,13 @@ int main() {
 	int height = 1080;
 	int ratio = width / height;
 
-	Vector2f worldSize = { 10000, 10000 };
+	int offset = 50;
+	double dt;
 
 	RenderWindow window(VideoMode(width, height), "SpaceShooter");
 	View view(Vector2f(width / 2, height / 2), Vector2f(width, height));
-	FloatRect windowBounds(0, 0, view.getSize().x, view.getSize().y);
 
 	window.setMouseCursorVisible(true);
-	window.setVerticalSyncEnabled(false);
-
 
 #pragma region Parallax
 
@@ -45,7 +43,7 @@ int main() {
 	int minStarSize = 1;
 	int maxStarSize = 3;
 
-	int starCount = 1000;
+	int starCount = 250;
 
 	bool colorSwitch = 0;
 
@@ -59,7 +57,7 @@ int main() {
 				maxStarSize
 			),
 			rng(0, 1),
-			Vector2f(rng(-1280, 1280), rng(-720, 720))
+			Vector2f(rng(-width / 2, width / 2), rng(-height / 2, height / 2))
 		);
 
 		stars.push_back(star);
@@ -79,10 +77,6 @@ int main() {
 	BulletManager enemyBulletManager;
 
 	vector<Enemy> enemies;
-
-	double dt;
-
-	int offset = 50;
 
 #pragma region HUD
 
@@ -144,13 +138,13 @@ int main() {
 
 #pragma endregion
 
-
 	while (window.isOpen()) {
 		window.setView(view);
 		view.setCenter(player.getPos());
+		Vector2f viewport = window.mapPixelToCoords(Vector2i(view.getViewport().getPosition()), view);
 
-		int randX = rng(-worldSize.x, worldSize.x);
-		int randY = rng(-worldSize.y, worldSize.y);
+		int randX = rng(viewport.x - offset, viewport.x + width + offset);
+		int randY = rng(viewport.y - offset, viewport.y + height + offset);
 
 		dt = clock.restart().asSeconds();
 
@@ -181,10 +175,12 @@ int main() {
 #pragma region Spawner
 
 		if (spawnTime >= spawnCooldown) {
-			if ((randX < -width) ||
-				(randY < -height) ||
-				(randX > width) ||
-				(randY > height)) {
+			if (
+				randX < viewport.x ||
+				randY < viewport.y ||
+				randX > viewport.x + width ||
+				randY > viewport.y + height
+				) {
 				Enemy enemy;
 				enemy.setPos(Vector2f(randX, randY));
 				enemy.setMaxHealth(player.level);
@@ -214,12 +210,32 @@ int main() {
 			stars[i].applyShader(starsShader);
 			stars[i].update(dt);
 
-			Vector2i starViewPos = window.mapCoordsToPixel(stars[i].getPos(), view);
-
-			if (windowBounds.contains(starViewPos.x, starViewPos.y))
-			{
-				stars[i].render(window);
+			if (stars[i].getPos().x < viewport.x) {
+				stars[i].pos.x = viewport.x + width;
 			}
+			if (stars[i].getPos().y < viewport.y) {
+				stars[i].pos.y = viewport.y + height;
+			}
+			if (stars[i].getPos().x > viewport.x + width) {
+				stars[i].pos.x = viewport.x;
+			}
+			if (stars[i].getPos().y > viewport.y + height) {
+				stars[i].pos.y = viewport.y;
+			}
+
+			stars[i].render(window);
+
+			/*
+			if (
+				stars[i].getPos().x > viewport.x ||
+				stars[i].getPos().y > viewport.y ||
+				stars[i].getPos().x < viewport.x + width ||
+				stars[i].getPos().y < viewport.y + height
+				)
+			{
+
+			}
+			*/
 		}
 
 #pragma region Bullets Drawing/Checking
@@ -229,8 +245,8 @@ int main() {
 				playerBulletManager.bullets[i].draw(window);
 				playerBulletManager.bullets[i].move(
 					player.bulletSpeed * playerBulletManager.bullets[i].dir.x * dt,
-					player.bulletSpeed * playerBulletManager.bullets[i].dir.y * dt);
-
+					player.bulletSpeed * playerBulletManager.bullets[i].dir.y * dt
+				);
 			}
 		}
 
@@ -243,14 +259,19 @@ int main() {
 					enemyBulletManager.bullets[i].bulletSpeed *
 					enemyBulletManager.bullets[i].dir.y * dt);
 
-				if (enemyBulletManager.bullets[i].getPos().x < 0 - offset ||
-					enemyBulletManager.bullets[i].getPos().y < 0 - offset ||
+				if (
+					enemyBulletManager.bullets[i].getPos().x <
+					viewport.x ||
+					enemyBulletManager.bullets[i].getPos().y <
+					viewport.y ||
 					enemyBulletManager.bullets[i].getPos().x >
-					window.getSize().x + offset ||
+					viewport.x + width ||
 					enemyBulletManager.bullets[i].getPos().y >
-					window.getSize().y + offset) {
-					enemyBulletManager.bullets.erase(enemyBulletManager.bullets.begin() +
-						i);
+					viewport.y + height
+					) {
+					enemyBulletManager.bullets.erase(
+						enemyBulletManager.bullets.begin() + i
+					);
 				}
 			}
 		}

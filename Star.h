@@ -19,8 +19,6 @@ public:
 		star.setPosition(rndPos);
 		pos = getPos();
 
-
-
 		if (colorSwitch) {
 			//blue
 			star.setFillColor(Color(190, 212, 250));
@@ -29,6 +27,18 @@ public:
 			//orange
 			star.setFillColor(Color(255, 246, 222));
 		}
+	}
+
+	Vector2f getPos() {
+		return star.getPosition();
+	}
+
+	void setPos(Vector2f newPos) {
+		star.setPosition(newPos);
+	}
+
+	void setPos(float x, float y) {
+		star.setPosition(Vector2f(x, y));
 	}
 
 	void update(float dt) {
@@ -71,14 +81,6 @@ public:
 
 	void setRadius(float radius) {
 		star.setRadius(radius);
-	}
-
-	Vector2f getPos() {
-		return star.getPosition();
-	}
-
-	void setPos(Vector2f newPos) {
-		star.setPosition(newPos);
 	}
 
 	void setFillColor(Color color) {
