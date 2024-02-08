@@ -16,7 +16,8 @@ public:
 	Vector2f dir;
 
 	int speed = 200;
-	int size = 50;
+	int size = 150;
+	int sides = size / 10;
 
 	double mag;
 
@@ -34,16 +35,13 @@ public:
 	float shootTime;
 
 	Enemy() {
-		Setup();
-	}
-
-	void Setup() {
 		enemy.setRadius(size);
-		enemy.setPointCount(size / 10);
+		enemy.setPointCount(sides);
 		enemy.setFillColor(Color::Black);
 
 		enemy.setOutlineColor(Color::White);
 		enemy.setOutlineThickness(5);
+
 
 		enemy.setOrigin(
 			enemy.getGlobalBounds().getSize().x / 2,
@@ -56,7 +54,13 @@ public:
 
 	void Update(RenderWindow& window, Vector2f playerPos, float dt) {
 		moveToPlayer(playerPos, dt);
-		healthBar.Update(getPos(), getCurrentHealth(), getMaxHealth(), Vector2f(-(size / 2) - 3, 60));
+		healthBar.Update(
+			getPos(),
+			getCurrentHealth(),
+			getMaxHealth(),
+			Vector2f(size * 2, sides),
+			Vector2f(-size, size + 10)
+		);
 
 		shootTime = clock.getElapsedTime().asSeconds();
 	}
