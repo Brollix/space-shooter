@@ -170,6 +170,19 @@ int main() {
 			}
 		}
 
+		if (enemies.size() > 0) {
+			for (int i = 0; i < enemies.size(); i++) {
+				if (enemies[i].shootTime >= enemies[i].shootingSpeed) {
+					int randEnemy = rng(0, i);
+
+					enemyBulletManager.bullets.push_back(enemies[randEnemy].shoot());
+					shootSound.play();
+
+					enemies[i].clock.restart();
+				}
+			}
+		}
+
 #pragma endregion
 
 #pragma region Spawner
@@ -190,13 +203,18 @@ int main() {
 			}
 		}
 
-#pragma endregion		
-
-		window.clear();
+#pragma endregion	
 
 		if (player.isAlive) {
 			player.Update(window, mouse, dt);
 		}
+
+		if (player.currentXP >= player.xpToNextLvl) {
+			player.levelUP();
+			pickupSound.play();
+		}
+
+		window.clear();
 
 		if (enemies.size() > 0) {
 			for (int i = 0; i < enemies.size(); i++) {
@@ -224,18 +242,6 @@ int main() {
 			}
 
 			stars[i].render(window);
-
-			/*
-			if (
-				stars[i].getPos().x > viewport.x ||
-				stars[i].getPos().y > viewport.y ||
-				stars[i].getPos().x < viewport.x + width ||
-				stars[i].getPos().y < viewport.y + height
-				)
-			{
-
-			}
-			*/
 		}
 
 #pragma region Bullets Drawing/Checking
@@ -244,9 +250,26 @@ int main() {
 			for (int i = 0; i < playerBulletManager.bullets.size(); i++) {
 				playerBulletManager.bullets[i].draw(window);
 				playerBulletManager.bullets[i].move(
-					player.bulletSpeed * playerBulletManager.bullets[i].dir.x * dt,
-					player.bulletSpeed * playerBulletManager.bullets[i].dir.y * dt
+					player.bulletSpeed *
+					playerBulletManager.bullets[i].dir.x * dt,
+					player.bulletSpeed *
+					playerBulletManager.bullets[i].dir.y * dt
 				);
+
+				if (
+					playerBulletManager.bullets[i].getPos().x <
+					viewport.x ||
+					playerBulletManager.bullets[i].getPos().y <
+					viewport.y ||
+					playerBulletManager.bullets[i].getPos().x >
+					viewport.x + width ||
+					playerBulletManager.bullets[i].getPos().y >
+					viewport.y + height
+					) {
+					playerBulletManager.bullets.erase(
+						playerBulletManager.bullets.begin() + i
+					);
+				}
 			}
 		}
 
@@ -276,25 +299,7 @@ int main() {
 			}
 		}
 
-#pragma endregion
-
-		if (player.currentXP >= player.xpToNextLvl) {
-			player.levelUP();
-			pickupSound.play();
-		}
-
-		if (enemies.size() > 0) {
-			for (int i = 0; i < enemies.size(); i++) {
-				if (enemies[i].shootTime >= enemies[i].shootingSpeed) {
-					int randEnemy = rng(0, i);
-
-					enemyBulletManager.bullets.push_back(enemies[randEnemy].shoot());
-					shootSound.play();
-
-					enemies[i].clock.restart();
-				}
-			}
-		}
+#pragma endregion		
 
 #pragma region Player Collisions
 
