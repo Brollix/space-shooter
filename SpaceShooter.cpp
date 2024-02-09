@@ -30,7 +30,19 @@ int main() {
 	RenderWindow window(VideoMode(width, height), "SpaceShooter");
 	View view(Vector2f(width / 2, height / 2), Vector2f(width, height));
 
-	window.setMouseCursorVisible(true);
+	//window.setMouseCursorVisible(true);
+
+	Mouse mouse;
+
+	Player player;
+
+	PlayerManager playerManager;
+	EnemyManager enemyManager;
+
+	BulletManager playerBulletManager;
+	BulletManager enemyBulletManager;
+
+	vector<Enemy> enemies;
 
 #pragma region Parallax
 
@@ -64,19 +76,7 @@ int main() {
 	}
 
 
-#pragma endregion
-
-	Mouse mouse;
-
-	Player player;
-
-	PlayerManager playerManager;
-	EnemyManager enemyManager;
-
-	BulletManager playerBulletManager;
-	BulletManager enemyBulletManager;
-
-	vector<Enemy> enemies;
+#pragma endregion	
 
 #pragma region HUD
 
@@ -97,6 +97,13 @@ int main() {
 	xpNumber.setPosition(
 		xpText.getGlobalBounds().getSize().x + xpText.getPosition().x + 10,
 		height - 50);
+
+	vector<Text> hud;
+
+	hud.push_back(scoreText);
+	hud.push_back(scoreNumber);
+	hud.push_back(xpText);
+	hud.push_back(xpNumber);
 
 #pragma endregion
 
@@ -140,11 +147,23 @@ int main() {
 
 	while (window.isOpen()) {
 		window.setView(view);
-		view.setCenter(player.getPos());
-		Vector2f viewport = window.mapPixelToCoords(Vector2i(view.getViewport().getPosition()), view);
 
-		int randX = rng(viewport.x - offset, viewport.x + width + offset);
-		int randY = rng(viewport.y - offset, viewport.y + height + offset);
+		view.setCenter(player.getPos());
+		Vector2f viewport = window.mapPixelToCoords(
+			Vector2i(
+				view.getViewport().getPosition()),
+			view
+		);
+
+		int randX = rng(
+			viewport.x - offset,
+			viewport.x + width + offset
+		);
+
+		int randY = rng(
+			viewport.y - offset,
+			viewport.y + height + offset
+		);
 
 		dt = clock.restart().asSeconds();
 
@@ -160,30 +179,11 @@ int main() {
 			if (event.type == Event::Closed) window.close();
 		}
 
-#pragma region Shoot
-
-		if (Mouse::isButtonPressed(Mouse::Left) /* && player.isAlive */) {
-			if (player.shootTime >= (1 / player.shootingSpeed)) {
-				playerBulletManager.bullets.push_back(player.shoot());
-				shootSound.play();
-				player.clock.restart();
-			}
+		if (player.currentXP >= player.xpToNextLvl) {
+			player.levelUP();
+			pickupSound.play();
 		}
 
-		if (enemies.size() > 0) {
-			for (int i = 0; i < enemies.size(); i++) {
-				if (enemies[i].shootTime >= enemies[i].shootingSpeed) {
-					int randEnemy = rng(0, i);
-
-					enemyBulletManager.bullets.push_back(enemies[randEnemy].shoot());
-					shootSound.play();
-
-					enemies[i].clock.restart();
-				}
-			}
-		}
-
-#pragma endregion
 
 #pragma region Spawner
 
@@ -203,18 +203,93 @@ int main() {
 			}
 		}
 
-#pragma endregion	
+#pragma endregion
+
+#pragma region Shoot
+
+		if (Mouse::isButtonPressed(Mouse::Left) /* && player.isAlive */) {
+			if (player.shootTime >= (1 / player.shootingSpeed)) {
+				playerBulletManager.bullets.push_back(player.shoot());
+				shootSound.play();
+				player.clock.restart();
+			}
+		}
+
+		if (enemies.size() > 0) {
+			for (int i = 0; i < enemies.size(); i++) {
+				if (enemies[i].shootTime >= (1 / enemies[i].shootingSpeed)) {
+					int randEnemy = rng(0, i);
+
+					enemyBulletManager.bullets.push_back(enemies[randEnemy].shoot());
+					shootSound.play();
+
+					enemies[i].clock.restart();
+				}
+
+			}
+		}
+
+#pragma endregion
+
+#pragma region Player Collisions
+
+		if (enemyBulletManager.bullets.size() > 0) {
+			for (int i = 0; i < enemyBulletManager.bullets.size(); i++) {
+				if (enemyBulletManager.bullets[i].bullet.getGlobalBounds().intersects(
+					player.player.getGlobalBounds())) {
+					hitSound.play();
+
+					if (player.currentHealth > 0) {
+						player.takeDmg(enemyManager.doDmg());
+					}
+					else {
+						// player dead
+					}
+					enemyBulletManager.bullets.erase(enemyBulletManager.bullets.begin() +
+						i);
+				}
+			}
+		}
+#pragma endregion
+
+#pragma region Enemy Collisions
+
+		if (enemies.size() > 0 && playerBulletManager.bullets.size() > 0) {
+			for (int i = 0; i < enemies.size(); i++) {
+				for (int j = 0; j < playerBulletManager.bullets.size(); j++) {
+					if (playerBulletManager.bullets[j]
+						.bullet.getGlobalBounds()
+						.intersects(enemies[i].enemy.getGlobalBounds())) {
+						hitSound.play();
+
+						if (enemies[i].currentHealth > 0) {
+							enemies[i].takeDmg(player.doDmg());
+							playerBulletManager.bullets.erase(
+								playerBulletManager.bullets.begin() + j);
+						}
+
+						if (enemies[i].currentHealth <= 0) {
+							player.setCurrentXP(enemies[i].xpGive);
+							enemies.erase(enemies.begin() + i);
+
+							dieSound.play();
+						}
+
+						break;
+					}
+				}
+			}
+		}
+
+#pragma endregion
+
+#pragma region Rendering
+
+		window.clear();
 
 		if (player.isAlive) {
 			player.Update(window, mouse, dt);
 		}
-
-		if (player.currentXP >= player.xpToNextLvl) {
-			player.levelUP();
-			pickupSound.play();
-		}
-
-		window.clear();
 
 		if (enemies.size() > 0) {
 			for (int i = 0; i < enemies.size(); i++) {
@@ -222,6 +297,11 @@ int main() {
 				enemies[i].render(window);
 			}
 		}
+
+		window.draw(scoreText);
+		window.draw(scoreNumber);
+
+#pragma region Stars moving & drawing
 
 		for (int i = 0; i < stars.size(); i++) {
 
@@ -244,7 +324,9 @@ int main() {
 			stars[i].render(window);
 		}
 
-#pragma region Bullets Drawing/Checking
+#pragma endregion
+
+#pragma region Bullets Drawing
 
 		if (playerBulletManager.bullets.size() > 0) {
 			for (int i = 0; i < playerBulletManager.bullets.size(); i++) {
@@ -299,61 +381,11 @@ int main() {
 			}
 		}
 
-#pragma endregion		
-
-#pragma region Player Collisions
-
-		if (enemyBulletManager.bullets.size() > 0) {
-			for (int i = 0; i < enemyBulletManager.bullets.size(); i++) {
-				if (enemyBulletManager.bullets[i].bullet.getGlobalBounds().intersects(
-					player.player.getGlobalBounds())) {
-					hitSound.play();
-
-					if (player.currentHealth > 0) {
-						player.takeDmg(enemyManager.doDmg());
-					}
-					else {
-						// player dead
-					}
-					enemyBulletManager.bullets.erase(enemyBulletManager.bullets.begin() +
-						i);
-				}
-			}
-		}
-#pragma endregion
-
-#pragma region Enemy Collisions
-
-		if (enemies.size() > 0 && playerBulletManager.bullets.size() > 0) {
-			for (int i = 0; i < enemies.size(); i++) {
-				for (int j = 0; j < playerBulletManager.bullets.size(); j++) {
-					if (playerBulletManager.bullets[j]
-						.bullet.getGlobalBounds()
-						.intersects(enemies[i].enemy.getGlobalBounds())) {
-						hitSound.play();
-
-						if (enemies[i].currentHealth > 0) {
-							enemies[i].takeDmg(player.doDmg());
-							playerBulletManager.bullets.erase(
-								playerBulletManager.bullets.begin() + j);
-						}
-
-						if (enemies[i].currentHealth <= 0) {
-							player.setCurrentXP(enemies[i].xpGive);
-							enemies.erase(enemies.begin() + i);
-
-							dieSound.play();
-						}
-
-						break;
-					}
-				}
-			}
-		}
-
 #pragma endregion
 
 		window.display();
 	}
+#pragma endregion
+
 	return 0;
 }

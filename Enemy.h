@@ -16,7 +16,7 @@ public:
 	Vector2f dir;
 
 	int speed = 200;
-	int size = 150;
+	int size = 30;
 	int sides = size / 10;
 
 	double mag;
@@ -31,7 +31,7 @@ public:
 	int maxHealth;
 	int currentHealth;
 
-	int shootingSpeed = 1;
+	float shootingSpeed = 0.2;
 	float shootTime;
 
 	Enemy() {
