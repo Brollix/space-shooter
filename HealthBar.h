@@ -11,14 +11,11 @@ public:
 	Font font;
 
 	HealthBar() {
-		Setup();
-	}
-
-	void Setup() {
 		font.loadFromFile("Oxygen.ttf");
 		number.setFont(font);
 		bar.setFillColor(Color(200, 50, 50));
 	}
+
 	void Update(Vector2f pos, float currentHealth, float maximumHealth, Vector2f dim, Vector2f offset = { 0, 0 }) {
 		setSize(dim, currentHealth, maximumHealth);
 		setString(currentHealth);
