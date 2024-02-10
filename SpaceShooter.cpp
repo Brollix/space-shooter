@@ -45,6 +45,7 @@ int main() {
 	//window.setMouseCursorVisible(true);
 
 	Mouse mouse;
+	Font font;
 
 	Player player;
 

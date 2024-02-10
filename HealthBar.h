@@ -8,15 +8,18 @@ public:
 
 	RectangleShape bar;
 	Text number;
-	Font font;
+	shared_ptr<sf::Font> font;;
 
 	HealthBar() {
-		font.loadFromFile("Oxygen.ttf");
-		number.setFont(font);
+		font = std::make_shared<Font>();
+		if (!font->loadFromFile("Oxygen.ttf")) {
+			cerr << "Failed to load font file" << endl;
+		}
+		number.setFont(*font);
 		bar.setFillColor(Color(200, 50, 50));
 	}
 
-	void Update(Vector2f pos, float currentHealth, float maximumHealth, Vector2f dim, Vector2f offset = { 0, 0 }) {
+	void Update(Vector2f pos, int currentHealth, int maximumHealth, Vector2f dim, Vector2f offset = { 0, 0 }) {
 		setSize(dim, currentHealth, maximumHealth);
 		setString(currentHealth);
 		setPosition(pos + offset);
@@ -24,15 +27,15 @@ public:
 
 	void setPosition(Vector2f pos) {
 		bar.setPosition(pos);
-		//number.setPosition(pos.x, pos.y + 25);
+		number.setPosition(pos.x, pos.y + 25);
 	}
 
-	void setString(float currentHealth) {
+	void setString(int currentHealth) {
 		number.setString(to_string(currentHealth) + "HP");
 	}
 
-	void setSize(Vector2f dim, float currentHealth, float maximumHealth) {
-		float percentage = currentHealth / maximumHealth;
+	void setSize(Vector2f dim, int currentHealth, int maximumHealth) {
+		float percentage = (float)currentHealth / (float)maximumHealth;
 		bar.setSize(Vector2f(dim.x * percentage, dim.y));
 	}
 
@@ -41,7 +44,7 @@ public:
 	}
 
 	void render(RenderWindow& window) {
-		//window.draw(number);
+		window.draw(number);
 		window.draw(bar);
 	}
 };
