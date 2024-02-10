@@ -41,8 +41,8 @@ public:
 		star.setPosition(Vector2f(x, y));
 	}
 
-	void update(float dt) {
-		move(dt);
+	void update(Vector2f playerSpeed) {
+		move(playerSpeed);
 	}
 
 	void render(RenderTarget& window) {
@@ -53,24 +53,9 @@ public:
 		this->shader = &shader;
 	}
 
-	void move(float dt) {
-		Vector2f deltaPos;
-		float speed = starSize * 25;
+	void move(Vector2f playerSpeed) {
 
-		if (Keyboard::isKeyPressed(Keyboard::W)) {
-			deltaPos.y -= 1;
-		}
-		if (Keyboard::isKeyPressed(Keyboard::A)) {
-			deltaPos.x -= 1;
-		}
-		if (Keyboard::isKeyPressed(Keyboard::S)) {
-			deltaPos.y += 1;
-		}
-		if (Keyboard::isKeyPressed(Keyboard::D)) {
-			deltaPos.x += 1;
-		}
-
-		pos -= normalize(deltaPos) * speed * dt;
+		pos -= playerSpeed * (starSize / 10);
 
 		setPos(pos);
 	}

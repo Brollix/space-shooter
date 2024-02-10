@@ -11,18 +11,21 @@ public:
 	CircleShape player;
 
 	Vector2f pos;
+	Vector2f vel;
 	Vector2f dist;
 	Vector2f dir;
 
 	Font font;
 	Text levelNumber;
 
-	int speed = 350;
+	float maxSpeed = 350;
+	float acc = 0.7;
+	float dacc = 100;
 
 	int radius = 30;
 	int thickness = 5;
 
-	int bulletSpeed = 1500;
+	float bulletSpeed = 1500;
 	float shootingSpeed = 5;
 	float shootTime;
 
@@ -78,27 +81,29 @@ public:
 	}
 
 	void move(RenderWindow& window, float dt) {
-		Vector2f deltaPos;
-
 		if (Keyboard::isKeyPressed(Keyboard::W)) {
-			deltaPos.y -= 1;
-			isMoving = true;
+			vel.y -= acc;
 		}
 		if (Keyboard::isKeyPressed(Keyboard::A)) {
-			deltaPos.x -= 1;
-			isMoving = true;
+			vel.x -= acc;
 		}
 		if (Keyboard::isKeyPressed(Keyboard::S)) {
-			deltaPos.y += 1;
-			isMoving = true;
+			vel.y += acc;
 		}
 		if (Keyboard::isKeyPressed(Keyboard::D)) {
-			deltaPos.x += 1;
-			isMoving = true;
+			vel.x += acc;
 		}
 
-		pos += normalize(deltaPos) * (float)speed * dt;
 
+
+		float speed = magnitude(vel);
+		if (speed > maxSpeed) {
+			vel = normalize(vel) * maxSpeed;
+		}
+
+		pos += vel * dt;
+
+		cout << magnitude(vel) << endl;
 		setPos(pos);
 	}
 

@@ -19,13 +19,25 @@ int rng(int min, int max) {
 	return rand() % (max - min + 1) + min;
 }
 
+float magnitude(Vector2f vec) {
+	return sqrt(pow(vec.x, 2) + pow(vec.y, 2));
+}
+
+Vector2f normalize(Vector2f vec) {
+	float mag = magnitude(vec);
+	if (mag) {
+		vec /= (float)mag;
+	}
+	return vec;
+}
+
 int main() {
 	int width = 1920;
 	int height = 1080;
 	int ratio = width / height;
 
 	int offset = 50;
-	double dt;
+	double dt = 0;
 
 	RenderWindow window(VideoMode(width, height), "SpaceShooter");
 	View view(Vector2f(width / 2, height / 2), Vector2f(width, height));
@@ -55,7 +67,7 @@ int main() {
 	int minStarSize = 1;
 	int maxStarSize = 3;
 
-	int starCount = 250;
+	int starCount = 100;
 
 	bool colorSwitch = 0;
 
@@ -306,7 +318,7 @@ int main() {
 		for (int i = 0; i < stars.size(); i++) {
 
 			stars[i].applyShader(starsShader);
-			stars[i].update(dt);
+			stars[i].update(normalize(player.vel));
 
 			if (stars[i].getPos().x < viewport.x) {
 				stars[i].pos.x = viewport.x + width;
