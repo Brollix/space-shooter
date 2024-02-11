@@ -55,7 +55,7 @@ public:
 
 	void move(Vector2f playerSpeed) {
 
-		pos -= playerSpeed * (starSize / 10);
+		pos -= playerSpeed * (starSize / 100);
 
 		setPos(pos);
 	}
