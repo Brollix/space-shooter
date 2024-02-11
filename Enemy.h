@@ -147,16 +147,4 @@ public:
 	void takeDmg(int damage) {
 		currentHealth -= damage;
 	}
-
-	float magnitude(Vector2f vec) {
-		return sqrt(pow(vec.x, 2) + pow(vec.y, 2));
-	}
-
-	Vector2f normalize(Vector2f vec) {
-		float mag = magnitude(vec);
-		if (mag) {
-			vec /= (float)mag;
-		}
-		return vec;
-	}
 };

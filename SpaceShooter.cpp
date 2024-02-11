@@ -15,15 +15,15 @@
 using namespace std;
 using namespace sf;
 
-int rng(int min, int max) {
+static int rng(int min, int max) {
 	return rand() % (max - min + 1) + min;
 }
 
-float magnitude(Vector2f vec) {
+static float magnitude(Vector2f vec) {
 	return sqrt(pow(vec.x, 2) + pow(vec.y, 2));
 }
 
-Vector2f normalize(Vector2f vec) {
+static Vector2f normalize(Vector2f vec) {
 	float mag = magnitude(vec);
 	if (mag) {
 		vec /= (float)mag;

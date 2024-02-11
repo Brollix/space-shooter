@@ -71,10 +71,7 @@ public:
 
 		shootTime = clock.getElapsedTime().asSeconds();
 
-
 		xpToNextLvl = pow(level, 2) * 5;
-
-
 
 		levelNumber.setPosition(player.getPosition().x - radius,
 			player.getPosition().y + radius + 20);
@@ -155,26 +152,13 @@ public:
 		player.setRotation(angle);
 	}
 
-	float magnitude(Vector2f vec) {
-		return sqrt(pow(vec.x, 2) + pow(vec.y, 2));
-	}
-
-	Vector2f normalize(Vector2f vec) {
-		float mag = magnitude(vec);
-		if (mag) {
-			vec /= (float)mag;
-		}
-		return vec;
-	}
-
 	Bullet shoot() {
 		Bullet bullet;
 		bullet.setPos(player.getPosition());
 
-		double mag;
-		mag = sqrt(pow(dist.x, 2) + pow(dist.y, 2));
-		bullet.dir.x = dist.x / mag;
-		bullet.dir.y = dist.y / mag;
+		float mag;
+		mag = magnitude(dist);
+		bullet.dir = dist / mag;
 
 		return bullet;
 	}
