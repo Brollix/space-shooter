@@ -103,7 +103,6 @@ public:
 
 		pos += vel * dt;
 
-		cout << magnitude(vel) << endl;
 		setPos(pos);
 	}
 

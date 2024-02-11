@@ -42,8 +42,6 @@ int main() {
 	RenderWindow window(VideoMode(width, height), "SpaceShooter");
 	View view(Vector2f(width / 2, height / 2), Vector2f(width, height));
 
-	//window.setMouseCursorVisible(true);
-
 	Mouse mouse;
 	Font font;
 
@@ -89,7 +87,7 @@ int main() {
 	}
 
 
-#pragma endregion	
+#pragma endregion
 
 #pragma region HUD
 
@@ -159,6 +157,7 @@ int main() {
 #pragma endregion
 
 	while (window.isOpen()) {
+
 		window.setView(view);
 
 		view.setCenter(player.getPos());
