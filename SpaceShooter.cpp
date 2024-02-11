@@ -44,6 +44,7 @@ int main() {
 
 	Mouse mouse;
 	Font font;
+	font.loadFromFile("Oxygen.ttf");
 
 	Player player;
 
@@ -88,33 +89,6 @@ int main() {
 
 
 #pragma endregion
-
-#pragma region HUD
-
-	Text scoreText;
-	scoreText.setPosition(25, 25);
-	scoreText.setFillColor(sf::Color::White);
-	scoreText.setString("XP: ");
-
-	Text scoreNumber;
-	scoreNumber.setPosition(scoreText.getLocalBounds().getSize().x + 25, 25);
-	scoreNumber.setFillColor(Color::White);
-
-	Text xpText;
-	xpText.setPosition(width / 2 - 150, height - 50);
-	xpText.setFillColor(Color::White);
-
-	Text xpNumber;
-	xpNumber.setPosition(
-		xpText.getGlobalBounds().getSize().x + xpText.getPosition().x + 10,
-		height - 50);
-
-	vector<Text> hud;
-
-	hud.push_back(scoreText);
-	hud.push_back(scoreNumber);
-	hud.push_back(xpText);
-	hud.push_back(xpNumber);
 
 #pragma endregion
 
@@ -195,7 +169,6 @@ int main() {
 			player.levelUP();
 			pickupSound.play();
 		}
-
 
 #pragma region Spawner
 
@@ -299,20 +272,6 @@ int main() {
 
 		window.clear();
 
-		if (player.isAlive) {
-			player.Update(window, mouse, dt);
-		}
-
-		if (enemies.size() > 0) {
-			for (int i = 0; i < enemies.size(); i++) {
-				enemies[i].Update(window, player.getPos(), dt);
-				enemies[i].render(window);
-			}
-		}
-
-		window.draw(scoreText);
-		window.draw(scoreNumber);
-
 #pragma region Stars moving & drawing
 
 		for (int i = 0; i < stars.size(); i++) {
@@ -394,6 +353,17 @@ int main() {
 		}
 
 #pragma endregion
+
+		if (player.isAlive) {
+			player.Update(window, mouse, dt);
+		}
+
+		if (enemies.size() > 0) {
+			for (int i = 0; i < enemies.size(); i++) {
+				enemies[i].Update(window, player.getPos(), enemies, dt);
+				enemies[i].render(window);
+			}
+		}
 
 		window.display();
 	}
