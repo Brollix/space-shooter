@@ -21,6 +21,8 @@ public:
 
 	double mag;
 
+	float separationRadius = size * 2 + size / 2;
+
 	int health = 100;
 	int damage = 10;
 	int level = 1;
@@ -52,8 +54,8 @@ public:
 		setCurrentHealth();
 	}
 
-	void Update(RenderWindow& window, Vector2f playerPos, float dt) {
-		moveToPlayer(playerPos, dt);
+	void Update(RenderWindow& window, Vector2f playerPos, const vector<Enemy>& enemies, float dt) {
+		moveToPlayer(playerPos, enemies, dt);
 		healthBar.Update(
 			getPos(),
 			getCurrentHealth(),
@@ -70,24 +72,37 @@ public:
 		healthBar.render(window);
 	}
 
-	void moveToPlayer(Vector2f playerPos, float dt) {
-		dist.x = playerPos.x - enemy.getPosition().x;
-		dist.y = playerPos.y - enemy.getPosition().y;
+	void moveToPlayer(Vector2f playerPos, const vector<Enemy>& enemies, float dt) {
+		dist = playerPos - enemy.getPosition();
 
 		mag = sqrt(pow(dist.x, 2) + pow(dist.y, 2));
 
 		dir.x = dist.x / mag;
 		dir.y = dist.y / mag;
 
-		if (mag > 150) {
-			setPos(
-				getPos() +
-				Vector2f(
-					dir.x * speed * dt,
-					dir.y * speed * dt
-				)
-			);
+		for (const auto& otherEnemy : enemies) {
+			if (&otherEnemy != this) { // Exclude self
+				Vector2f separationForce(0, 0);
+				Vector2f distToOther = enemy.getPosition() - otherEnemy.enemy.getPosition();
+				float distToOtherMag = magnitude(distToOther);
+
+				if (distToOtherMag < separationRadius) {
+					separationForce = normalize(distToOther) * (separationRadius - distToOtherMag);
+					dir.x += separationForce.x;
+					dir.y += separationForce.y;
+				}
+			}
 		}
+
+
+		setPos(
+			getPos() +
+			Vector2f(
+				dir.x * speed * dt,
+				dir.y * speed * dt
+			)
+		);
+
 	}
 
 	Bullet shoot() {
@@ -131,5 +146,17 @@ public:
 
 	void takeDmg(int damage) {
 		currentHealth -= damage;
+	}
+
+	float magnitude(Vector2f vec) {
+		return sqrt(pow(vec.x, 2) + pow(vec.y, 2));
+	}
+
+	Vector2f normalize(Vector2f vec) {
+		float mag = magnitude(vec);
+		if (mag) {
+			vec /= (float)mag;
+		}
+		return vec;
 	}
 };
