@@ -12,15 +12,16 @@ public:
 
 	Vector2f pos;
 	Vector2f vel;
+	Vector2f acc;
 	Vector2f dist;
 	Vector2f dir;
 
 	Font font;
 	Text levelNumber;
 
+	float mass = 1500;
+	float thrust = 500000;
 	float maxSpeed = 350;
-	float acc = 0.7;
-	float dacc = 100;
 
 	int radius = 30;
 	int thickness = 5;
@@ -44,9 +45,6 @@ public:
 	int currentHealth;
 
 	Player() {
-		Setup();
-	}
-	void Setup() {
 		player.setRadius(radius);
 		player.setPointCount(3);
 
@@ -73,7 +71,10 @@ public:
 
 		shootTime = clock.getElapsedTime().asSeconds();
 
+
 		xpToNextLvl = pow(level, 2) * 5;
+
+
 
 		levelNumber.setPosition(player.getPosition().x - radius,
 			player.getPosition().y + radius + 20);
@@ -81,29 +82,31 @@ public:
 	}
 
 	void move(RenderWindow& window, float dt) {
+		Vector2f force;
 		if (Keyboard::isKeyPressed(Keyboard::W)) {
-			vel.y -= acc;
+			force.y -= thrust;
 		}
 		if (Keyboard::isKeyPressed(Keyboard::A)) {
-			vel.x -= acc;
+			force.x -= thrust;
 		}
 		if (Keyboard::isKeyPressed(Keyboard::S)) {
-			vel.y += acc;
+			force.y += thrust;
 		}
 		if (Keyboard::isKeyPressed(Keyboard::D)) {
-			vel.x += acc;
+			force.x += thrust;
 		}
 
+		applyForce(force);
 
-
-		float speed = magnitude(vel);
-		if (speed > maxSpeed) {
-			vel = normalize(vel) * maxSpeed;
-		}
+		vel += acc * dt;
 
 		pos += vel * dt;
 
 		setPos(pos);
+	}
+
+	void applyForce(sf::Vector2f force) {
+		acc = force / this->mass;
 	}
 
 	void draw(RenderWindow& window) {
@@ -212,7 +215,6 @@ public:
 
 	int levelUP() {
 		currentXP -= xpToNextLvl;
-		//setShootSpeed();
 		return level += 1;
 	}
 };
