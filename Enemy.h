@@ -3,6 +3,7 @@ using namespace sf;
 
 #include "Bullet.h"
 #include "HealthBar.h"
+#include "Utilities.h"
 
 class Enemy {
 public:
