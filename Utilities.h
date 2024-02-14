@@ -1,7 +1,9 @@
-#ifndef UTILITIES_H
-#define UTILITIES_H
-
+#pragma once
 using namespace sf;
+
+int rng(int min, int max) {
+	return rand() % (max - min + 1) + min;
+}
 
 float magnitude(Vector2f vec) {
 	return sqrt(pow(vec.x, 2) + pow(vec.y, 2));
@@ -15,8 +17,10 @@ Vector2f normalize(Vector2f vec) {
 	return vec;
 }
 
-int rng(int min, int max) {
-	return rand() % (max - min + 1) + min;
+float distance(Vector2f self, Vector2f away) {
+	Vector2f dist;
+	dist = away - self;
+	return magnitude(dist);
 }
 
-#endif
+
