@@ -7,6 +7,7 @@
 #include "Enemy.h"
 #include "EnemyManager.h"
 #include "BulletManager.h"
+#include "Experience.h"
 
 #include "Utilities.h"
 
@@ -41,6 +42,7 @@ int main() {
 	BulletManager enemyBulletManager;
 
 	vector<Enemy> enemies;
+	vector<Experience> pendingXP;
 
 #pragma region Parallax
 
@@ -73,8 +75,6 @@ int main() {
 		stars.push_back(star);
 	}
 
-
-#pragma endregion
 
 #pragma endregion
 
@@ -156,6 +156,14 @@ int main() {
 			pickupSound.play();
 		}
 
+		for (int i = 0; i < pendingXP.size(); i++)
+		{
+			if (distance(player.getPos(), pendingXP[i].position) < player.pickUpRadius) {
+				player.gainXP(pendingXP[i].amount);
+				pendingXP.erase(pendingXP.begin() + i);
+			}
+		}
+
 #pragma region Spawner
 
 		if (spawnTime >= spawnCooldown) {
@@ -216,8 +224,10 @@ int main() {
 					else {
 						// player dead
 					}
-					enemyBulletManager.bullets.erase(enemyBulletManager.bullets.begin() +
-						i);
+					enemyBulletManager.bullets.erase(
+						enemyBulletManager.bullets.begin() +
+						i
+					);
 				}
 			}
 		}
@@ -240,7 +250,11 @@ int main() {
 						}
 
 						if (enemies[i].currentHealth <= 0) {
-							player.setCurrentXP(enemies[i].xpGive);
+							pendingXP.push_back(
+								Experience(
+									enemies[i].xpGive,
+									enemies[i].getPos()
+								));
 							enemies.erase(enemies.begin() + i);
 
 							dieSound.play();
@@ -257,7 +271,6 @@ int main() {
 #pragma region Rendering
 
 		window.clear();
-
 #pragma region Stars moving & drawing
 
 		for (int i = 0; i < stars.size(); i++) {
@@ -282,6 +295,12 @@ int main() {
 		}
 
 #pragma endregion
+
+
+		for (int i = 0; i < pendingXP.size(); i++) {
+			pendingXP[i].draw(window);
+		}
+
 
 #pragma region Bullets Drawing
 
@@ -339,6 +358,7 @@ int main() {
 		}
 
 #pragma endregion
+
 
 		if (player.isAlive) {
 			player.Update(window, mouse, dt);
