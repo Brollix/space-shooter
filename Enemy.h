@@ -6,9 +6,9 @@ using namespace sf;
 #include "Utilities.h"
 
 class Enemy {
-private:
-	static Clock levelUpTimer;
+
 public:
+	static Clock levelUpTimer;
 	Clock clock;
 	CircleShape enemy;
 
@@ -38,6 +38,8 @@ public:
 
 	float shootingSpeed = 0.2;
 	float shootTime;
+
+	Enemy() {};
 
 	Enemy(int startLevel) : level(startLevel) {
 		enemy.setRadius(size);

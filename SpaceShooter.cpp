@@ -3,11 +3,13 @@
 #include <iostream>
 
 #include "Player.h"
-#include "PlayerManager.h"
 #include "Enemy.h"
-#include "EnemyManager.h"
-#include "EnemySpawner.h"
+
+#include "PlayerManager.h"
 #include "BulletManager.h"
+#include "EnemyManager.h"
+
+#include "EnemySpawner.h"
 #include "Experience.h"
 
 #include "Utilities.h"
@@ -18,6 +20,8 @@
 
 using namespace std;
 using namespace sf;
+
+Clock Enemy::levelUpTimer;
 
 int main() {
 	int width = 1920;
@@ -113,6 +117,7 @@ int main() {
 	Clock clock;
 	Clock fpsClock;
 	Clock spawnClock;
+
 	float spawnTime = 0;
 	float spawnCooldown = 2;
 
