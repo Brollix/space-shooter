@@ -6,6 +6,7 @@
 #include "PlayerManager.h"
 #include "Enemy.h"
 #include "EnemyManager.h"
+#include "EnemySpawner.h"
 #include "BulletManager.h"
 #include "Experience.h"
 
@@ -37,6 +38,7 @@ int main() {
 
 	PlayerManager playerManager;
 	EnemyManager enemyManager;
+	EnemySpawner spawner;
 
 	BulletManager playerBulletManager;
 	BulletManager enemyBulletManager;
@@ -156,13 +158,17 @@ int main() {
 			pickupSound.play();
 		}
 
-		for (int i = 0; i < pendingXP.size(); i++)
+		if (pendingXP.size() > 0)
 		{
-			if (distance(player.getPos(), pendingXP[i].position) < player.pickUpRadius) {
-				player.gainXP(pendingXP[i].amount);
-				pendingXP.erase(pendingXP.begin() + i);
+			for (int i = 0; i < pendingXP.size(); i++)
+			{
+				if (distance(player.getPos(), pendingXP[i].position) < player.pickUpRadius) {
+					player.gainXP(pendingXP[i].amount);
+					pendingXP.erase(pendingXP.begin() + i);
+				}
 			}
 		}
+
 
 #pragma region Spawner
 
@@ -173,9 +179,9 @@ int main() {
 				randX > viewport.x + width ||
 				randY > viewport.y + height
 				) {
-				Enemy enemy;
+				Enemy enemy = spawner.spawnEnemy();
 				enemy.setPos(Vector2f(randX, randY));
-				enemy.setMaxHealth(player.level);
+				enemy.setMaxHealth(enemy.level);
 				enemy.setCurrentHealth();
 				enemies.push_back(enemy);
 				spawnClock.restart();

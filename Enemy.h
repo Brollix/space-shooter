@@ -6,6 +6,8 @@ using namespace sf;
 #include "Utilities.h"
 
 class Enemy {
+private:
+	static Clock levelUpTimer;
 public:
 	Clock clock;
 	CircleShape enemy;
@@ -37,7 +39,7 @@ public:
 	float shootingSpeed = 0.2;
 	float shootTime;
 
-	Enemy() {
+	Enemy(int startLevel) : level(startLevel) {
 		enemy.setRadius(size);
 		enemy.setPointCount(sides);
 		enemy.setFillColor(Color::Black);
@@ -148,4 +150,25 @@ public:
 	void takeDmg(int damage) {
 		currentHealth -= damage;
 	}
+
+	void updateLevel() {
+		if (levelUpTimer.getElapsedTime().asSeconds() >= 10) { // Level up every 60 seconds
+			levelUp();
+			levelUpTimer.restart();
+		}
+	}
+
+	void levelUp() {
+		level = getLevel();
+		level++;
+	}
+
+	int getLevel() const {
+		return level;
+	}
+
+	static Clock& getLevelUpTimer() {
+		return levelUpTimer;
+	}
 };
+

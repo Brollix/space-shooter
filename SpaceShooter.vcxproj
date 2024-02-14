@@ -146,6 +146,7 @@
     <ClInclude Include="BulletManager.h" />
     <ClInclude Include="Enemy.h" />
     <ClInclude Include="EnemyManager.h" />
+    <ClInclude Include="EnemySpawner.h" />
     <ClInclude Include="Experience.h" />
     <ClInclude Include="Galaxy.h" />
     <ClInclude Include="HealthBar.h" />
