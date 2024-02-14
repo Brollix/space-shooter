@@ -37,6 +37,8 @@ public:
 	int totalXP;
 	int xpToNextLvl;
 
+	float pickUpRadius = 150;
+
 	bool isAlive = true;
 	bool isMoving;
 
@@ -45,7 +47,7 @@ public:
 	int maxHealth;
 	int currentHealth;
 
-	Player() {
+	Player() : currentXP(0), level(1), xpToNextLvl(5) {
 		player.setRadius(radius);
 		player.setPointCount(3);
 
@@ -71,8 +73,6 @@ public:
 		move(window, dt);
 
 		shootTime = clock.getElapsedTime().asSeconds();
-
-		xpToNextLvl = pow(level, 2) * 5;
 
 		levelNumber.setPosition(player.getPosition().x - radius,
 			player.getPosition().y + radius + 20);
@@ -198,8 +198,25 @@ public:
 		currentXP += XP;
 	}
 
-	int levelUP() {
-		currentXP -= xpToNextLvl;
-		return level += 1;
+	int getLevel() {
+		return level;
+	}
+
+	void gainXP(int amount) {
+		currentXP += amount;
+		while (currentXP >= xpToNextLvl) {
+			levelUP();
+			currentXP -= xpToNextLvl;
+			xpToNextLvl = calcXPtoNextLevel();
+		}
+	}
+
+	void levelUP() {
+		level = getLevel();
+		level++;
+	}
+
+	int calcXPtoNextLevel() {
+		return pow(level, 2) * 5;
 	}
 };
