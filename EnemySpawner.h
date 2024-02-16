@@ -1,7 +1,6 @@
 #pragma once
 #include "Enemy.h"
 
-
 Clock Enemy::levelUpTimer;
 
 class EnemySpawner
@@ -13,7 +12,7 @@ public:
 	}
 
 private:
-	int period = 10;
+	int period = 15;
 
 	int calculateEnemyLevel(const sf::Clock& levelUpTimer) {
 		int secondsPassed = levelUpTimer.getElapsedTime().asSeconds();
