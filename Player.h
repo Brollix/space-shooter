@@ -20,8 +20,8 @@ public:
 	Font font;
 	Text levelNumber;
 
-	float mass = 1500;
-	float thrust = 500000;
+	float mass = 150;
+	float thrust = 100000;
 	float maxSpeed = 350;
 
 	int radius = 30;
@@ -37,7 +37,7 @@ public:
 	int totalXP;
 	int xpToNextLvl;
 
-	float pickUpRadius = 150;
+	float pickUpRadius = 250;
 
 	bool isAlive = true;
 	bool isMoving;
@@ -81,6 +81,7 @@ public:
 
 	void move(RenderWindow& window, float dt) {
 		Vector2f force;
+
 		if (Keyboard::isKeyPressed(Keyboard::W)) {
 			force.y -= thrust;
 		}
@@ -94,9 +95,18 @@ public:
 			force.x += thrust;
 		}
 
+
 		applyForce(force);
 
 		vel += acc * dt;
+
+		if (magnitude(vel) > maxSpeed) {
+			// Normalize velocity vector
+			vel /= magnitude(vel);
+
+			// Scale velocity vector to maxSpeed
+			vel *= maxSpeed;
+		}
 
 		pos += vel * dt;
 
@@ -118,6 +128,10 @@ public:
 
 	void setPos(Vector2f newPos) {
 		player.setPosition(newPos.x, newPos.y);
+	}
+
+	FloatRect getGlobalBounds() {
+		return player.getGlobalBounds();
 	}
 
 	void setLevelText() {
@@ -157,9 +171,7 @@ public:
 		Bullet bullet;
 		bullet.setPos(player.getPosition());
 
-		float mag;
-		mag = magnitude(dist);
-		bullet.dir = dist / mag;
+		bullet.dir = normalize(dist);
 
 		return bullet;
 	}
