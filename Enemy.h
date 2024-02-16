@@ -18,7 +18,7 @@ public:
 	Vector2f dist;
 	Vector2f dir;
 
-	int speed = 200;
+	float speed = 200;
 	int size = 30;
 	int sides = size / 10;
 
@@ -65,8 +65,9 @@ public:
 			getPos(),
 			getCurrentHealth(),
 			getMaxHealth(),
+			("level: " + to_string(level)),
 			Vector2f(size * 2, sides),
-			Vector2f(-size, size + 10)
+			Vector2f(-size - 5, size + 10)
 		);
 
 		shootTime = clock.getElapsedTime().asSeconds();
@@ -80,10 +81,9 @@ public:
 	void moveToPlayer(Vector2f playerPos, const vector<Enemy>& enemies, float dt) {
 		dist = playerPos - enemy.getPosition();
 
-		mag = sqrt(pow(dist.x, 2) + pow(dist.y, 2));
+		mag = magnitude(dist);
 
-		dir.x = dist.x / mag;
-		dir.y = dist.y / mag;
+		dir = normalize(dist);
 
 		for (const auto& otherEnemy : enemies) {
 			if (&otherEnemy != this) { // Exclude self
@@ -93,18 +93,15 @@ public:
 
 				if (distToOtherMag < separationRadius) {
 					separationForce = normalize(distToOther) * (separationRadius - distToOtherMag);
-					dir.x += separationForce.x;
-					dir.y += separationForce.y;
+					dir += separationForce;
 				}
 			}
 		}
 
-
 		setPos(
 			getPos() +
 			Vector2f(
-				dir.x * speed * dt,
-				dir.y * speed * dt
+				dir * speed * dt
 			)
 		);
 
