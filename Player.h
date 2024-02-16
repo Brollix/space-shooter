@@ -4,6 +4,7 @@ using namespace sf;
 
 #include "Bullet.h"
 #include "HealthBar.h"
+#include "Utilities.h"
 
 class Player {
 public:
@@ -11,18 +12,22 @@ public:
 	CircleShape player;
 
 	Vector2f pos;
+	Vector2f vel;
+	Vector2f acc;
 	Vector2f dist;
 	Vector2f dir;
 
 	Font font;
 	Text levelNumber;
 
-	int speed = 350;
+	float mass = 150;
+	float thrust = 100000;
+	float maxSpeed = 350;
 
 	int radius = 30;
 	int thickness = 5;
 
-	int bulletSpeed = 1500;
+	float bulletSpeed = 1500;
 	float shootingSpeed = 5;
 	float shootTime;
 
@@ -32,6 +37,8 @@ public:
 	int totalXP;
 	int xpToNextLvl;
 
+	float pickUpRadius = 250;
+
 	bool isAlive = true;
 	bool isMoving;
 
@@ -40,10 +47,7 @@ public:
 	int maxHealth;
 	int currentHealth;
 
-	Player() {
-		Setup();
-	}
-	void Setup() {
+	Player() : currentXP(0), level(1), xpToNextLvl(5) {
 		player.setRadius(radius);
 		player.setPointCount(3);
 
@@ -70,36 +74,47 @@ public:
 
 		shootTime = clock.getElapsedTime().asSeconds();
 
-		xpToNextLvl = pow(level, 2) * 5;
-
 		levelNumber.setPosition(player.getPosition().x - radius,
 			player.getPosition().y + radius + 20);
 		levelNumber.setString("lvl " + to_string(level));
 	}
 
 	void move(RenderWindow& window, float dt) {
-		Vector2f deltaPos;
+		Vector2f force;
 
 		if (Keyboard::isKeyPressed(Keyboard::W)) {
-			deltaPos.y -= 1;
-			isMoving = true;
+			force.y -= thrust;
 		}
 		if (Keyboard::isKeyPressed(Keyboard::A)) {
-			deltaPos.x -= 1;
-			isMoving = true;
+			force.x -= thrust;
 		}
 		if (Keyboard::isKeyPressed(Keyboard::S)) {
-			deltaPos.y += 1;
-			isMoving = true;
+			force.y += thrust;
 		}
 		if (Keyboard::isKeyPressed(Keyboard::D)) {
-			deltaPos.x += 1;
-			isMoving = true;
+			force.x += thrust;
 		}
 
-		pos += normalize(deltaPos) * (float)speed * dt;
+
+		applyForce(force);
+
+		vel += acc * dt;
+
+		if (magnitude(vel) > maxSpeed) {
+			// Normalize velocity vector
+			vel /= magnitude(vel);
+
+			// Scale velocity vector to maxSpeed
+			vel *= maxSpeed;
+		}
+
+		pos += vel * dt;
 
 		setPos(pos);
+	}
+
+	void applyForce(sf::Vector2f force) {
+		acc = force / this->mass;
 	}
 
 	void draw(RenderWindow& window) {
@@ -113,6 +128,10 @@ public:
 
 	void setPos(Vector2f newPos) {
 		player.setPosition(newPos.x, newPos.y);
+	}
+
+	FloatRect getGlobalBounds() {
+		return player.getGlobalBounds();
 	}
 
 	void setLevelText() {
@@ -148,26 +167,11 @@ public:
 		player.setRotation(angle);
 	}
 
-	float magnitude(Vector2f vec) {
-		return sqrt(pow(vec.x, 2) + pow(vec.y, 2));
-	}
-
-	Vector2f normalize(Vector2f vec) {
-		float mag = magnitude(vec);
-		if (mag) {
-			vec /= (float)mag;
-		}
-		return vec;
-	}
-
 	Bullet shoot() {
 		Bullet bullet;
 		bullet.setPos(player.getPosition());
 
-		double mag;
-		mag = sqrt(pow(dist.x, 2) + pow(dist.y, 2));
-		bullet.dir.x = dist.x / mag;
-		bullet.dir.y = dist.y / mag;
+		bullet.dir = normalize(dist);
 
 		return bullet;
 	}
@@ -206,9 +210,25 @@ public:
 		currentXP += XP;
 	}
 
-	int levelUP() {
-		currentXP -= xpToNextLvl;
-		//setShootSpeed();
-		return level += 1;
+	int getLevel() {
+		return level;
+	}
+
+	void gainXP(int amount) {
+		currentXP += amount;
+		while (currentXP >= xpToNextLvl) {
+			levelUP();
+			currentXP -= xpToNextLvl;
+			xpToNextLvl = calcXPtoNextLevel();
+		}
+	}
+
+	void levelUP() {
+		level = getLevel();
+		level++;
+	}
+
+	int calcXPtoNextLevel() {
+		return pow(level, 2) * 5;
 	}
 };

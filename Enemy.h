@@ -3,9 +3,12 @@ using namespace sf;
 
 #include "Bullet.h"
 #include "HealthBar.h"
+#include "Utilities.h"
 
 class Enemy {
+
 public:
+	static Clock levelUpTimer;
 	Clock clock;
 	CircleShape enemy;
 
@@ -15,10 +18,13 @@ public:
 	Vector2f dist;
 	Vector2f dir;
 
-	int speed = 200;
-	int size = 50;
+	float speed = 200;
+	int size = 30;
+	int sides = size / 10;
 
 	double mag;
+
+	float separationRadius = size * 2 + size / 2;
 
 	int health = 100;
 	int damage = 10;
@@ -30,20 +36,19 @@ public:
 	int maxHealth;
 	int currentHealth;
 
-	int shootingSpeed = 1;
+	float shootingSpeed = 0.2;
 	float shootTime;
 
-	Enemy() {
-		Setup();
-	}
+	Enemy() {};
 
-	void Setup() {
+	Enemy(int startLevel) : level(startLevel) {
 		enemy.setRadius(size);
-		enemy.setPointCount(size / 10);
+		enemy.setPointCount(sides);
 		enemy.setFillColor(Color::Black);
 
 		enemy.setOutlineColor(Color::White);
 		enemy.setOutlineThickness(5);
+
 
 		enemy.setOrigin(
 			enemy.getGlobalBounds().getSize().x / 2,
@@ -54,9 +59,16 @@ public:
 		setCurrentHealth();
 	}
 
-	void Update(RenderWindow& window, Vector2f playerPos, float dt) {
-		moveToPlayer(playerPos, dt);
-		healthBar.Update(getPos(), getCurrentHealth(), getMaxHealth(), Vector2f(-(size / 2) - 3, 60));
+	void Update(RenderWindow& window, Vector2f playerPos, const vector<Enemy>& enemies, float dt) {
+		moveToPlayer(playerPos, enemies, dt);
+		healthBar.Update(
+			getPos(),
+			getCurrentHealth(),
+			getMaxHealth(),
+			("level: " + to_string(level)),
+			Vector2f(size * 2, sides),
+			Vector2f(-size - 5, size + 10)
+		);
 
 		shootTime = clock.getElapsedTime().asSeconds();
 	}
@@ -66,24 +78,33 @@ public:
 		healthBar.render(window);
 	}
 
-	void moveToPlayer(Vector2f playerPos, float dt) {
-		dist.x = playerPos.x - enemy.getPosition().x;
-		dist.y = playerPos.y - enemy.getPosition().y;
+	void moveToPlayer(Vector2f playerPos, const vector<Enemy>& enemies, float dt) {
+		dist = playerPos - enemy.getPosition();
 
-		mag = sqrt(pow(dist.x, 2) + pow(dist.y, 2));
+		mag = magnitude(dist);
 
-		dir.x = dist.x / mag;
-		dir.y = dist.y / mag;
+		dir = normalize(dist);
 
-		if (mag > 150) {
-			setPos(
-				getPos() +
-				Vector2f(
-					dir.x * speed * dt,
-					dir.y * speed * dt
-				)
-			);
+		for (const auto& otherEnemy : enemies) {
+			if (&otherEnemy != this) { // Exclude self
+				Vector2f separationForce(0, 0);
+				Vector2f distToOther = enemy.getPosition() - otherEnemy.enemy.getPosition();
+				float distToOtherMag = magnitude(distToOther);
+
+				if (distToOtherMag < separationRadius) {
+					separationForce = normalize(distToOther) * (separationRadius - distToOtherMag);
+					dir += separationForce;
+				}
+			}
 		}
+
+		setPos(
+			getPos() +
+			Vector2f(
+				dir * speed * dt
+			)
+		);
+
 	}
 
 	Bullet shoot() {
@@ -128,4 +149,25 @@ public:
 	void takeDmg(int damage) {
 		currentHealth -= damage;
 	}
+
+	void updateLevel() {
+		if (levelUpTimer.getElapsedTime().asSeconds() >= 10) { // Level up every 60 seconds
+			levelUp();
+			levelUpTimer.restart();
+		}
+	}
+
+	void levelUp() {
+		level = getLevel();
+		level++;
+	}
+
+	int getLevel() const {
+		return level;
+	}
+
+	static Clock& getLevelUpTimer() {
+		return levelUpTimer;
+	}
 };
+

@@ -146,10 +146,14 @@
     <ClInclude Include="BulletManager.h" />
     <ClInclude Include="Enemy.h" />
     <ClInclude Include="EnemyManager.h" />
+    <ClInclude Include="EnemySpawner.h" />
+    <ClInclude Include="Experience.h" />
+    <ClInclude Include="Galaxy.h" />
     <ClInclude Include="HealthBar.h" />
     <ClInclude Include="Player.h" />
     <ClInclude Include="PlayerManager.h" />
     <ClInclude Include="Star.h" />
+    <ClInclude Include="Utilities.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="starFragment.shader" />

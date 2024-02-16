@@ -1,5 +1,5 @@
 #pragma once
-struct EnemyManager: public Enemy
+struct EnemyManager : public Enemy
 {
 
 };

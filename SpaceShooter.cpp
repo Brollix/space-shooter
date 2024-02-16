@@ -3,10 +3,16 @@
 #include <iostream>
 
 #include "Player.h"
-#include "PlayerManager.h"
 #include "Enemy.h"
-#include "EnemyManager.h"
+
+#include "PlayerManager.h"
 #include "BulletManager.h"
+#include "EnemyManager.h"
+
+#include "EnemySpawner.h"
+#include "Experience.h"
+
+#include "Utilities.h"
 
 #include "Star.h"
 
@@ -15,22 +21,32 @@
 using namespace std;
 using namespace sf;
 
-int rng(int min, int max) {
-	return rand() % (max - min + 1) + min;
-}
-
 int main() {
 	int width = 1920;
 	int height = 1080;
 	int ratio = width / height;
 
 	int offset = 50;
-	double dt;
+	double dt = 0;
 
 	RenderWindow window(VideoMode(width, height), "SpaceShooter");
 	View view(Vector2f(width / 2, height / 2), Vector2f(width, height));
 
-	window.setMouseCursorVisible(true);
+	Mouse mouse;
+	Font font;
+	font.loadFromFile("Oxygen.ttf");
+
+	Player player;
+
+	PlayerManager playerManager;
+	EnemyManager enemyManager;
+	EnemySpawner spawner;
+
+	BulletManager playerBulletManager;
+	BulletManager enemyBulletManager;
+
+	vector<Enemy> enemies;
+	vector<Experience> pendingXP;
 
 #pragma region Parallax
 
@@ -43,7 +59,7 @@ int main() {
 	int minStarSize = 1;
 	int maxStarSize = 3;
 
-	int starCount = 250;
+	int starCount = 100;
 
 	bool colorSwitch = 0;
 
@@ -63,40 +79,6 @@ int main() {
 		stars.push_back(star);
 	}
 
-
-#pragma endregion
-
-	Mouse mouse;
-
-	Player player;
-
-	PlayerManager playerManager;
-	EnemyManager enemyManager;
-
-	BulletManager playerBulletManager;
-	BulletManager enemyBulletManager;
-
-	vector<Enemy> enemies;
-
-#pragma region HUD
-
-	Text scoreText;
-	scoreText.setPosition(25, 25);
-	scoreText.setFillColor(sf::Color::White);
-	scoreText.setString("XP: ");
-
-	Text scoreNumber;
-	scoreNumber.setPosition(scoreText.getLocalBounds().getSize().x + 25, 25);
-	scoreNumber.setFillColor(Color::White);
-
-	Text xpText;
-	xpText.setPosition(width / 2 - 150, height - 50);
-	xpText.setFillColor(Color::White);
-
-	Text xpNumber;
-	xpNumber.setPosition(
-		xpText.getGlobalBounds().getSize().x + xpText.getPosition().x + 10,
-		height - 50);
 
 #pragma endregion
 
@@ -122,7 +104,7 @@ int main() {
 
 	Sound pickupSound;
 	SoundBuffer pickupSoundBuffer;
-	pickupSound.setBuffer(hitSoundBuffer);
+	pickupSound.setBuffer(pickupSoundBuffer);
 	pickupSoundBuffer.loadFromFile("sounds/pickupCoin.wav");
 	pickupSound.setVolume(50);
 
@@ -133,18 +115,32 @@ int main() {
 	Clock clock;
 	Clock fpsClock;
 	Clock spawnClock;
+
 	float spawnTime = 0;
-	float spawnCooldown = 2;
+	float spawnCooldown = 1;
 
 #pragma endregion
 
 	while (window.isOpen()) {
-		window.setView(view);
-		view.setCenter(player.getPos());
-		Vector2f viewport = window.mapPixelToCoords(Vector2i(view.getViewport().getPosition()), view);
 
-		int randX = rng(viewport.x - offset, viewport.x + width + offset);
-		int randY = rng(viewport.y - offset, viewport.y + height + offset);
+		window.setView(view);
+
+		view.setCenter(player.getPos());
+		Vector2f viewport = window.mapPixelToCoords(
+			Vector2i(
+				view.getViewport().getPosition()),
+			view
+		);
+
+		int randX = rng(
+			viewport.x - offset,
+			viewport.x + width + offset
+		);
+
+		int randY = rng(
+			viewport.y - offset,
+			viewport.y + height + offset
+		);
 
 		dt = clock.restart().asSeconds();
 
@@ -160,17 +156,23 @@ int main() {
 			if (event.type == Event::Closed) window.close();
 		}
 
-#pragma region Shoot
-
-		if (Mouse::isButtonPressed(Mouse::Left) /* && player.isAlive */) {
-			if (player.shootTime >= (1 / player.shootingSpeed)) {
-				playerBulletManager.bullets.push_back(player.shoot());
-				shootSound.play();
-				player.clock.restart();
-			}
+		if (player.currentXP >= player.xpToNextLvl) {
+			player.levelUP();
+			pickupSound.play();
 		}
 
-#pragma endregion
+		for (int i = 0; i < pendingXP.size(); i++)
+		{
+			pendingXP[i].update(dt, player.getPos(), player.pickUpRadius);
+
+			if (pendingXP[i].getGlobalBounds().intersects(player.getGlobalBounds()))
+			{
+				player.gainXP(pendingXP[i].amount);
+				pendingXP.erase(pendingXP.begin() + i);
+
+				pickupSound.play();
+			}
+		}
 
 #pragma region Spawner
 
@@ -181,34 +183,114 @@ int main() {
 				randX > viewport.x + width ||
 				randY > viewport.y + height
 				) {
-				Enemy enemy;
+				Enemy enemy = spawner.spawnEnemy();
 				enemy.setPos(Vector2f(randX, randY));
-				enemy.setMaxHealth(player.level);
+				enemy.setMaxHealth(enemy.level);
 				enemy.setCurrentHealth();
 				enemies.push_back(enemy);
 				spawnClock.restart();
 			}
 		}
 
-#pragma endregion		
+#pragma endregion
 
-		window.clear();
+#pragma region Shoot
 
-		if (player.isAlive) {
-			player.Update(window, mouse, dt);
+		if (Mouse::isButtonPressed(Mouse::Left) /* && player.isAlive */) {
+			if (player.shootTime >= (1 / player.shootingSpeed)) {
+				playerBulletManager.bullets.push_back(player.shoot());
+				shootSound.play();
+				player.clock.restart();
+			}
 		}
 
 		if (enemies.size() > 0) {
 			for (int i = 0; i < enemies.size(); i++) {
-				enemies[i].Update(window, player.getPos(), dt);
-				enemies[i].render(window);
+				if (enemies[i].shootTime >= (1 / enemies[i].shootingSpeed)) {
+					int randEnemy = rng(0, i);
+
+					enemyBulletManager.bullets.push_back(enemies[randEnemy].shoot());
+					shootSound.play();
+
+					enemies[i].clock.restart();
+				}
+
 			}
 		}
+
+#pragma endregion
+
+#pragma region Player Collisions
+
+		if (enemyBulletManager.bullets.size() > 0) {
+			for (int i = 0; i < enemyBulletManager.bullets.size(); i++) {
+				if (enemyBulletManager.bullets[i].bullet.getGlobalBounds().intersects(
+					player.getGlobalBounds())) {
+					hitSound.play();
+
+					if (player.currentHealth > 0) {
+						player.takeDmg(enemyManager.doDmg());
+					}
+					else {
+						// player dead
+					}
+					enemyBulletManager.bullets.erase(
+						enemyBulletManager.bullets.begin() +
+						i
+					);
+				}
+			}
+		}
+#pragma endregion
+
+#pragma region Enemy Collisions
+
+		if (enemies.size() > 0 && playerBulletManager.bullets.size() > 0) {
+			for (int i = 0; i < enemies.size(); i++) {
+				for (int j = 0; j < playerBulletManager.bullets.size(); j++) {
+					if (playerBulletManager.bullets[j]
+						.bullet.getGlobalBounds()
+						.intersects(enemies[i].enemy.getGlobalBounds())) {
+						hitSound.play();
+
+
+						enemies[i].takeDmg(player.doDmg());
+						playerBulletManager.bullets.erase(
+							playerBulletManager.bullets.begin() + j);
+
+
+						if (enemies[i].currentHealth <= 0) {
+							Experience exp(enemies[i].xpGive, enemies[i].getPos());
+							pendingXP.push_back(exp);
+
+							enemies.erase(enemies.begin() + i);
+
+							dieSound.play();
+						}
+
+						break;
+					}
+				}
+			}
+		}
+
+#pragma endregion
+
+#pragma region Rendering
+
+		window.clear();
+
+		for (int i = 0; i < pendingXP.size(); i++) {
+
+			pendingXP[i].draw(window);
+		}
+
+#pragma region Stars moving & drawing
 
 		for (int i = 0; i < stars.size(); i++) {
 
 			stars[i].applyShader(starsShader);
-			stars[i].update(dt);
+			stars[i].update(normalize(player.vel));
 
 			if (stars[i].getPos().x < viewport.x) {
 				stars[i].pos.x = viewport.x + width;
@@ -224,29 +306,36 @@ int main() {
 			}
 
 			stars[i].render(window);
-
-			/*
-			if (
-				stars[i].getPos().x > viewport.x ||
-				stars[i].getPos().y > viewport.y ||
-				stars[i].getPos().x < viewport.x + width ||
-				stars[i].getPos().y < viewport.y + height
-				)
-			{
-
-			}
-			*/
 		}
 
-#pragma region Bullets Drawing/Checking
+#pragma endregion
+
+#pragma region Bullets Drawing
 
 		if (playerBulletManager.bullets.size() > 0) {
 			for (int i = 0; i < playerBulletManager.bullets.size(); i++) {
 				playerBulletManager.bullets[i].draw(window);
 				playerBulletManager.bullets[i].move(
-					player.bulletSpeed * playerBulletManager.bullets[i].dir.x * dt,
-					player.bulletSpeed * playerBulletManager.bullets[i].dir.y * dt
+					player.bulletSpeed *
+					playerBulletManager.bullets[i].dir.x * dt,
+					player.bulletSpeed *
+					playerBulletManager.bullets[i].dir.y * dt
 				);
+
+				if (
+					playerBulletManager.bullets[i].getPos().x <
+					viewport.x ||
+					playerBulletManager.bullets[i].getPos().y <
+					viewport.y ||
+					playerBulletManager.bullets[i].getPos().x >
+					viewport.x + width ||
+					playerBulletManager.bullets[i].getPos().y >
+					viewport.y + height
+					) {
+					playerBulletManager.bullets.erase(
+						playerBulletManager.bullets.begin() + i
+					);
+				}
 			}
 		}
 
@@ -278,77 +367,21 @@ int main() {
 
 #pragma endregion
 
-		if (player.currentXP >= player.xpToNextLvl) {
-			player.levelUP();
-			pickupSound.play();
+
+		if (player.isAlive) {
+			player.Update(window, mouse, dt);
 		}
 
 		if (enemies.size() > 0) {
 			for (int i = 0; i < enemies.size(); i++) {
-				if (enemies[i].shootTime >= enemies[i].shootingSpeed) {
-					int randEnemy = rng(0, i);
-
-					enemyBulletManager.bullets.push_back(enemies[randEnemy].shoot());
-					shootSound.play();
-
-					enemies[i].clock.restart();
-				}
+				enemies[i].Update(window, player.getPos(), enemies, dt);
+				enemies[i].render(window);
 			}
 		}
-
-#pragma region Player Collisions
-
-		if (enemyBulletManager.bullets.size() > 0) {
-			for (int i = 0; i < enemyBulletManager.bullets.size(); i++) {
-				if (enemyBulletManager.bullets[i].bullet.getGlobalBounds().intersects(
-					player.player.getGlobalBounds())) {
-					hitSound.play();
-
-					if (player.currentHealth > 0) {
-						player.takeDmg(enemyManager.doDmg());
-					}
-					else {
-						// player dead
-					}
-					enemyBulletManager.bullets.erase(enemyBulletManager.bullets.begin() +
-						i);
-				}
-			}
-		}
-#pragma endregion
-
-#pragma region Enemy Collisions
-
-		if (enemies.size() > 0 && playerBulletManager.bullets.size() > 0) {
-			for (int i = 0; i < enemies.size(); i++) {
-				for (int j = 0; j < playerBulletManager.bullets.size(); j++) {
-					if (playerBulletManager.bullets[j]
-						.bullet.getGlobalBounds()
-						.intersects(enemies[i].enemy.getGlobalBounds())) {
-						hitSound.play();
-
-						if (enemies[i].currentHealth > 0) {
-							enemies[i].takeDmg(player.doDmg());
-							playerBulletManager.bullets.erase(
-								playerBulletManager.bullets.begin() + j);
-						}
-
-						if (enemies[i].currentHealth <= 0) {
-							player.setCurrentXP(enemies[i].xpGive);
-							enemies.erase(enemies.begin() + i);
-
-							dieSound.play();
-						}
-
-						break;
-					}
-				}
-			}
-		}
-
-#pragma endregion
 
 		window.display();
 	}
+#pragma endregion
+
 	return 0;
 }
