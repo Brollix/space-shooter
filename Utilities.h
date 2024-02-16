@@ -23,4 +23,8 @@ float distance(Vector2f self, Vector2f away) {
 	return magnitude(dist);
 }
 
+Vector2f lerp(const Vector2f& self, const Vector2f& away, float t) {
+	return Vector2f((1.0f - t) * self.x + t * away.x, (1.0f - t) * self.y + t * away.y);
+}
+
 
