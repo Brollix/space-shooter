@@ -3,7 +3,6 @@
 #include <iostream>
 
 #include "Player.h"
-#include "Enemy.h"
 
 #include "PlayerManager.h"
 #include "BulletManager.h"
@@ -206,15 +205,16 @@ int main() {
 
 		if (enemies.size() > 0) {
 			for (int i = 0; i < enemies.size(); i++) {
-				if (enemies[i].shootTime >= (1 / enemies[i].shootingSpeed)) {
-					int randEnemy = rng(0, i);
+				if (i < 3) {
+					if (enemies[i].shootTime >= (1 / enemies[i].shootingSpeed)) {
+						int randEnemy = rng(0, i);
 
-					enemyBulletManager.bullets.push_back(enemies[randEnemy].shoot());
-					shootSound.play();
+						enemyBulletManager.bullets.push_back(enemies[randEnemy].shoot());
+						shootSound.play();
 
-					enemies[i].clock.restart();
+						enemies[i].clock.restart();
+					}
 				}
-
 			}
 		}
 
