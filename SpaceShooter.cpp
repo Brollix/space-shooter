@@ -21,8 +21,6 @@
 using namespace std;
 using namespace sf;
 
-Clock Enemy::levelUpTimer;
-
 int main() {
 	int width = 1920;
 	int height = 1080;
@@ -106,7 +104,7 @@ int main() {
 
 	Sound pickupSound;
 	SoundBuffer pickupSoundBuffer;
-	pickupSound.setBuffer(hitSoundBuffer);
+	pickupSound.setBuffer(pickupSoundBuffer);
 	pickupSoundBuffer.loadFromFile("sounds/pickupCoin.wav");
 	pickupSound.setVolume(50);
 
@@ -119,7 +117,7 @@ int main() {
 	Clock spawnClock;
 
 	float spawnTime = 0;
-	float spawnCooldown = 2;
+	float spawnCooldown = 1;
 
 #pragma endregion
 
@@ -163,17 +161,18 @@ int main() {
 			pickupSound.play();
 		}
 
-		if (pendingXP.size() > 0)
+		for (int i = 0; i < pendingXP.size(); i++)
 		{
-			for (int i = 0; i < pendingXP.size(); i++)
+			pendingXP[i].update(dt, player.getPos(), player.pickUpRadius);
+
+			if (pendingXP[i].getGlobalBounds().intersects(player.getGlobalBounds()))
 			{
-				if (distance(player.getPos(), pendingXP[i].position) < player.pickUpRadius) {
-					player.gainXP(pendingXP[i].amount);
-					pendingXP.erase(pendingXP.begin() + i);
-				}
+				player.gainXP(pendingXP[i].amount);
+				pendingXP.erase(pendingXP.begin() + i);
+
+				pickupSound.play();
 			}
 		}
-
 
 #pragma region Spawner
 
@@ -226,7 +225,7 @@ int main() {
 		if (enemyBulletManager.bullets.size() > 0) {
 			for (int i = 0; i < enemyBulletManager.bullets.size(); i++) {
 				if (enemyBulletManager.bullets[i].bullet.getGlobalBounds().intersects(
-					player.player.getGlobalBounds())) {
+					player.getGlobalBounds())) {
 					hitSound.play();
 
 					if (player.currentHealth > 0) {
@@ -254,18 +253,16 @@ int main() {
 						.intersects(enemies[i].enemy.getGlobalBounds())) {
 						hitSound.play();
 
-						if (enemies[i].currentHealth > 0) {
-							enemies[i].takeDmg(player.doDmg());
-							playerBulletManager.bullets.erase(
-								playerBulletManager.bullets.begin() + j);
-						}
+
+						enemies[i].takeDmg(player.doDmg());
+						playerBulletManager.bullets.erase(
+							playerBulletManager.bullets.begin() + j);
+
 
 						if (enemies[i].currentHealth <= 0) {
-							pendingXP.push_back(
-								Experience(
-									enemies[i].xpGive,
-									enemies[i].getPos()
-								));
+							Experience exp(enemies[i].xpGive, enemies[i].getPos());
+							pendingXP.push_back(exp);
+
 							enemies.erase(enemies.begin() + i);
 
 							dieSound.play();
@@ -282,6 +279,12 @@ int main() {
 #pragma region Rendering
 
 		window.clear();
+
+		for (int i = 0; i < pendingXP.size(); i++) {
+
+			pendingXP[i].draw(window);
+		}
+
 #pragma region Stars moving & drawing
 
 		for (int i = 0; i < stars.size(); i++) {
@@ -306,12 +309,6 @@ int main() {
 		}
 
 #pragma endregion
-
-
-		for (int i = 0; i < pendingXP.size(); i++) {
-			pendingXP[i].draw(window);
-		}
-
 
 #pragma region Bullets Drawing
 
