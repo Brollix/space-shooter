@@ -17,7 +17,7 @@ public:
 		bullet.setOrigin(radius, radius);
 	}
 
-	void draw(RenderWindow &window) {
+	void draw(RenderWindow& window) {
 		window.draw(bullet);
 	}
 
